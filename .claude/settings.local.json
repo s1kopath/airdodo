@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:echoflights.com)",
+      "Bash(php --version)",
+      "Bash(composer --version)",
+      "Bash(composer create-project *)",
+      "Bash(rsync -a --exclude='.git' /tmp/airdodo-scaffold/ /home/coder/projects/airdodo/)",
+      "Bash(composer require *)",
+      "Bash(npm install *)",
+      "Bash(php *)",
+      "Bash(composer remove *)",
+      "Bash(npm run *)"
+    ]
+  }
+}
