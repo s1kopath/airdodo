@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'google' => [
+        'vision_key' => env('GOOGLE_VISION_KEY'),
+    ],
+
 ];

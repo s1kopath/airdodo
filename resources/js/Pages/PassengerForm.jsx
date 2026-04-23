@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
 import Layout from '../Components/Layout';
 import StepBar from '../Components/StepBar';
+import Tesseract from 'tesseract.js';
 
 const TITLES    = ['Mr', 'Mrs', 'Ms', 'Miss', 'Dr'];
 const COUNTRIES = [
@@ -47,6 +48,66 @@ export default function PassengerForm({ flight, date, passengers }) {
         contact_phone: '',
         passengers:    initial,
     });
+
+    const [scanning, setScanning] = useState(null); // idx of passenger being scanned
+    const fileInputRef = useRef(null);
+
+    async function handleScan(idx, file) {
+        if (!file) return;
+
+        console.log(`[OCR] Starting scan for passenger ${idx + 1}...`, file.name);
+        setScanning(idx);
+        
+        try {
+            // Step 1: Client-side OCR
+            console.log('[OCR] Running Tesseract.js locally...');
+            const { data: { text } } = await Tesseract.recognize(file, 'eng');
+            console.log('[OCR] Text detected:', text);
+
+            if (!text || text.trim().length === 0) {
+                console.warn('[OCR] No text detected in image.');
+                alert('No text detected in image. Please ensure the photo is clear.');
+                return;
+            }
+
+            // Step 2: Send extracted text to backend for parsing
+            console.log('[OCR] Sending text to backend for parsing...');
+            const response = await fetch('/ocr/scan', {
+                method: 'POST',
+                body: JSON.stringify({ text }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                }
+            });
+
+            const result = await response.json();
+            console.log('[OCR] Backend result:', result);
+
+            if (result.success) {
+                const pax = [...data.passengers];
+                pax[idx] = {
+                    ...pax[idx],
+                    first_name:      result.first_name || pax[idx].first_name,
+                    last_name:       result.last_name || pax[idx].last_name,
+                    date_of_birth:   result.date_of_birth || pax[idx].date_of_birth,
+                    passport_number: result.passport_number || pax[idx].passport_number,
+                    nationality:     result.nationality || pax[idx].nationality,
+                };
+                setData('passengers', pax);
+                console.log('[OCR] Passenger form updated successfully.');
+            } else {
+                console.error('[OCR] Backend failed to parse:', result.message);
+                alert(result.message || 'Failed to parse passport data. Please enter manually.');
+            }
+        } catch (error) {
+            console.error('[OCR] Critical Error:', error);
+            alert('An error occurred during scanning.');
+        } finally {
+            setScanning(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    }
 
     useEffect(() => {
         if (Object.keys(errors).length > 0) {
@@ -177,6 +238,44 @@ export default function PassengerForm({ flight, date, passengers }) {
                                                 <h3 className="font-black text-slate-900 text-lg tracking-tight">Passenger {idx + 1}</h3>
                                                 <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Passport details required</p>
                                             </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={e => handleScan(idx, e.target.files[0])}
+                                            />
+                                            <button
+                                                type="button"
+                                                disabled={scanning !== null}
+                                                onClick={() => {
+                                                    setScanning(idx);
+                                                    fileInputRef.current.click();
+                                                }}
+                                                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all ${
+                                                    scanning === idx 
+                                                        ? 'bg-slate-100 text-slate-400' 
+                                                        : 'bg-brand/10 text-brand hover:bg-brand hover:text-white shadow-sm'
+                                                }`}
+                                            >
+                                                {scanning === idx ? (
+                                                    <>
+                                                        <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                                        </svg>
+                                                        Scanning...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                                                        Scan Passport
+                                                    </>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\FlightController as AdminFlightController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\OcrController;
 use Illuminate\Support\Facades\Route;
 
 // --- Public user flow ---
@@ -33,6 +34,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-bookings/{reference}/edit', [BookingController::class, 'edit'])->name('bookings.edit');
     Route::put('/my-bookings/{reference}', [BookingController::class, 'update'])->name('bookings.update');
     Route::get('/my-bookings/{reference}/download', [BookingController::class, 'download'])->name('bookings.download');
+
+    // OCR
+    Route::post('/ocr/scan', [OcrController::class, 'scan'])->name('ocr.scan');
 });
 
 // Skip payment routes for now
