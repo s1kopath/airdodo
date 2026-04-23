@@ -3,132 +3,173 @@
 <head>
 <meta charset="UTF-8">
 <style>
-  body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #1a1a2e; margin: 0; padding: 0; }
-  .page { padding: 30px 40px; }
-  .header { background: #1a1a2e; color: white; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
-  .brand { font-size: 22px; font-weight: bold; letter-spacing: 2px; }
-  .doc-type { font-size: 11px; opacity: 0.8; text-align: right; }
-  .ref-box { background: #f0f4ff; border-left: 4px solid #4f46e5; padding: 10px 16px; margin: 16px 0; }
-  .ref-box strong { font-size: 16px; color: #4f46e5; }
-  .section-title { font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
-  .flight-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
-  .route { font-size: 20px; font-weight: bold; text-align: center; color: #1a1a2e; margin-bottom: 12px; }
-  .route span { color: #4f46e5; }
-  .flight-meta { display: table; width: 100%; }
-  .meta-col { display: table-cell; width: 33%; padding: 4px 8px; }
-  .meta-label { font-size: 9px; color: #9ca3af; text-transform: uppercase; }
-  .meta-value { font-size: 13px; font-weight: bold; }
-  table.pax { width: 100%; border-collapse: collapse; margin-top: 6px; }
-  table.pax th { background: #f9fafb; padding: 7px 10px; text-align: left; font-size: 10px; color: #6b7280; border: 1px solid #e5e7eb; }
-  table.pax td { padding: 7px 10px; border: 1px solid #e5e7eb; font-size: 11px; }
-  .notice { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; padding: 10px 14px; margin-top: 20px; font-size: 10px; color: #78350f; }
-  .footer { text-align: center; font-size: 9px; color: #9ca3af; margin-top: 30px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
+  @page { margin: 0; }
+  body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; color: #334155; margin: 0; padding: 0; line-height: 1.5; }
+  .header { background: #0f172a; color: white; padding: 30px 45px; position: relative; }
+  .brand { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 5px; }
+  .brand span { color: #0ea5e9; }
+  .doc-info { position: absolute; right: 45px; top: 35px; text-align: right; }
+  .doc-type { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+  .doc-id { font-size: 10px; opacity: 0.7; margin-top: 5px; }
+
+  .container { padding: 40px 45px; }
+  
+  .ref-grid { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+  .ref-item { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; }
+  .label { font-size: 8px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+  .value { font-size: 14px; font-weight: 700; color: #0f172a; }
+  .value.brand-text { color: #0ea5e9; }
+
+  .section-header { background: #f8fafc; border-left: 4px solid #0ea5e9; padding: 8px 15px; margin-bottom: 20px; }
+  .section-title { font-size: 10px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 1px; }
+
+  .flight-box { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 30px; }
+  .flight-header { background: #f1f5f9; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; }
+  .flight-header table { width: 100%; }
+  .flight-num { font-weight: 800; font-size: 12px; color: #0f172a; }
+  
+  .route-table { width: 100%; padding: 25px 20px; }
+  .airport-code { font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1; }
+  .airport-name { font-size: 9px; color: #64748b; font-weight: 600; margin-top: 5px; }
+  .arrow { color: #0ea5e9; font-size: 24px; text-align: center; }
+
+  .details-grid { width: 100%; border-collapse: collapse; border-top: 1px solid #e2e8f0; }
+  .details-grid td { padding: 15px 20px; border-right: 1px solid #e2e8f0; width: 25%; }
+  .details-grid td:last-child { border-right: none; }
+
+  .pax-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+  .pax-table th { background: #f8fafc; text-align: left; padding: 12px 15px; font-size: 9px; font-weight: 800; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
+  .pax-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 10px; font-weight: 600; }
+  
+  .footer-notice { background: #fffbeb; border: 1px solid #fef3c7; padding: 20px; border-radius: 10px; margin-top: 40px; }
+  .notice-title { font-weight: 800; font-size: 9px; color: #92400e; text-transform: uppercase; margin-bottom: 5px; }
+  .notice-text { font-size: 9px; color: #b45309; line-height: 1.4; }
+
+  .official-footer { text-align: center; margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+  .footer-text { font-size: 8px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  
+  .watermark { position: absolute; top: 40%; left: 10%; font-size: 80px; color: #f1f5f9; transform: rotate(-30deg); z-index: -1; font-weight: 900; opacity: 0.5; }
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="brand">✈ AirDodo</div>
-  <div class="doc-type">FLIGHT ITINERARY<br>For Visa Application</div>
-</div>
+  <div class="watermark">VISA ITINERARY</div>
 
-<div class="page">
-  <div class="ref-box">
-    Booking Reference: <strong>{{ $order->reference }}</strong> &nbsp;&nbsp;
-    Issued: {{ now()->format('d M Y') }}
-  </div>
-
-  <div class="section-title">Flight Details</div>
-  <div class="flight-card">
-    <div class="route">
-      {{ $order->flight->origin->iata_code }} <span>→</span> {{ $order->flight->destination->iata_code }}
-    </div>
-    <div style="text-align:center; color:#6b7280; margin-bottom: 10px;">
-      {{ $order->flight->origin->city }} to {{ $order->flight->destination->city }}
-    </div>
-    <div class="flight-meta">
-      <div class="meta-col">
-        <div class="meta-label">Airline</div>
-        <div class="meta-value">{{ $order->flight->airline->name }}</div>
-      </div>
-      <div class="meta-col">
-        <div class="meta-label">Flight</div>
-        <div class="meta-value">{{ $order->flight->flight_number }}</div>
-      </div>
-      <div class="meta-col">
-        <div class="meta-label">Aircraft</div>
-        <div class="meta-value">{{ $order->flight->aircraft_type ?: 'N/A' }}</div>
-      </div>
-    </div>
-    <div class="flight-meta" style="margin-top:10px;">
-      <div class="meta-col">
-        <div class="meta-label">Date</div>
-        <div class="meta-value">{{ $order->travel_date->format('D, d M Y') }}</div>
-      </div>
-      <div class="meta-col">
-        <div class="meta-label">Departure</div>
-        <div class="meta-value">{{ $order->flight->departure_time }}</div>
-      </div>
-      <div class="meta-col">
-        <div class="meta-label">Arrival</div>
-        <div class="meta-value">{{ $order->flight->arrival_time }}</div>
-      </div>
-    </div>
-    <div class="flight-meta" style="margin-top:10px;">
-      <div class="meta-col">
-        <div class="meta-label">Duration</div>
-        <div class="meta-value">{{ $order->flight->duration_hours }}h {{ $order->flight->duration_minutes }}m</div>
-      </div>
-      <div class="meta-col">
-        <div class="meta-label">Cabin</div>
-        <div class="meta-value">{{ $order->flight->cabin_class }}</div>
-      </div>
-      <div class="meta-col">
-        <div class="meta-label">Status</div>
-        <div class="meta-value" style="color:#16a34a;">CONFIRMED</div>
-      </div>
+  <div class="header">
+    <div class="brand">AIR<span>DODO</span></div>
+    <div class="doc-info">
+      <div class="doc-type">Flight Reservation</div>
+      <div class="doc-id">Reference: #{{ $order->reference }}</div>
     </div>
   </div>
 
-  <div class="section-title">Passenger Details</div>
-  <table class="pax">
-    <thead>
+  <div class="container">
+    <table class="ref-grid">
       <tr>
-        <th>#</th>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Date of Birth</th>
-        <th>Nationality</th>
-        <th>Passport No.</th>
-        <th>Passport Expiry</th>
+        <td style="padding-right: 15px; width: 50%;">
+          <div class="ref-item">
+            <div class="label">Booking Reference</div>
+            <div class="value brand-text">{{ $order->reference }}</div>
+          </div>
+        </td>
+        <td style="width: 50%;">
+          <div class="ref-item">
+            <div class="label">Date of Issue</div>
+            <div class="value">{{ now()->format('d F Y') }}</div>
+          </div>
+        </td>
       </tr>
-    </thead>
-    <tbody>
-      @foreach($order->passengers as $i => $p)
-      <tr>
-        <td>{{ $i + 1 }}</td>
-        <td>{{ $p->title }} {{ strtoupper($p->last_name) }}, {{ $p->first_name }}</td>
-        <td>{{ ucfirst($p->type) }}</td>
-        <td>{{ $p->date_of_birth->format('d M Y') }}</td>
-        <td>{{ $p->nationality }}</td>
-        <td>{{ $p->passport_number ?: '—' }}</td>
-        <td>{{ $p->passport_expiry?->format('d M Y') ?: '—' }}</td>
-      </tr>
-      @endforeach
-    </tbody>
-  </table>
+    </table>
 
-  <div class="section-title">Contact</div>
-  <p style="margin:4px 0;">{{ $order->contact_name }} &nbsp;|&nbsp; {{ $order->contact_email }} @if($order->contact_phone) &nbsp;|&nbsp; {{ $order->contact_phone }} @endif</p>
+    <div class="section-header">
+      <div class="section-title">Outbound Journey Details</div>
+    </div>
 
-  <div class="notice">
-    <strong>Important Notice:</strong> This document is a flight itinerary generated for visa application purposes only.
-    It is not a confirmed airline ticket. The holder must purchase an actual airline ticket prior to travel.
-    AirDodo does not operate flights and is not affiliated with any airline.
+    <div class="flight-box">
+      <div class="flight-header">
+        <table>
+          <tr>
+            <td class="flight-num">{{ $order->flight->airline->name }} &bull; {{ $order->flight->flight_number }}</td>
+            <td style="text-align: right; font-weight: 800; color: #0ea5e9;">CONFIRMED</td>
+          </tr>
+        </table>
+      </div>
+      
+      <table class="route-table">
+        <tr>
+          <td width="40%">
+            <div class="airport-code">{{ $order->flight->origin->iata_code }}</div>
+            <div class="airport-name">{{ strtoupper($order->flight->origin->city) }}</div>
+          </td>
+          <td width="20%" class="arrow">✈</td>
+          <td width="40%" style="text-align: right;">
+            <div class="airport-code">{{ $order->flight->destination->iata_code }}</div>
+            <div class="airport-name">{{ strtoupper($order->flight->destination->city) }}</div>
+          </td>
+        </tr>
+      </table>
+
+      <table class="details-grid">
+        <tr>
+          <td>
+            <div class="label">Departure</div>
+            <div class="value">{{ $order->flight->departure_time }}</div>
+            <div style="font-size: 8px; color: #94a3b8; margin-top: 3px;">{{ $order->travel_date->format('D, d M Y') }}</div>
+          </td>
+          <td>
+            <div class="label">Arrival</div>
+            <div class="value">{{ $order->flight->arrival_time }}</div>
+            <div style="font-size: 8px; color: #94a3b8; margin-top: 3px;">{{ $order->travel_date->format('D, d M Y') }}</div>
+          </td>
+          <td>
+            <div class="label">Class</div>
+            <div class="value">{{ $order->flight->cabin_class }}</div>
+          </td>
+          <td>
+            <div class="label">Duration</div>
+            <div class="value">{{ $order->flight->duration_hours }}h {{ $order->flight->duration_minutes }}m</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Passenger Manifest</div>
+    </div>
+
+    <table class="pax-table">
+      <thead>
+        <tr>
+          <th>Name of Passenger</th>
+          <th>Traveler Type</th>
+          <th>Passport Number</th>
+          <th>Nationality</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach($order->passengers as $p)
+        <tr>
+          <td>{{ $p->title }} {{ strtoupper($p->last_name) }}, {{ $p->first_name }}</td>
+          <td>{{ strtoupper($p->type) }}</td>
+          <td style="font-family: monospace; letter-spacing: 1px;">{{ $p->passport_number ?: 'NOT PROVIDED' }}</td>
+          <td>{{ strtoupper($p->nationality) }}</td>
+        </tr>
+        @endforeach
+      </tbody>
+    </table>
+
+    <div class="footer-notice">
+      <div class="notice-title">Official Notice for Embassy / Consular Officers</div>
+      <div class="notice-text">
+        This document is a computer-generated flight itinerary prepared for the purpose of a visa application. It reflects a valid flight schedule and passenger reservation. Please note that this is not an airline ticket. The final ticket will be issued upon visa approval and full payment. For verification of this itinerary, please contact AirDodo support or use the reference number provided above.
+      </div>
+    </div>
+
+    <div class="official-footer">
+      <div class="footer-text">
+        Generated by AirDodo Global Travel Services &bull; airdodo.com &bull; Verified Electronic Document
+      </div>
+    </div>
   </div>
-
-  <div class="footer">
-    Generated by AirDodo &bull; airdodo.com &bull; This itinerary is valid for visa application purposes only.
-  </div>
-</div>
 </body>
 </html>
+

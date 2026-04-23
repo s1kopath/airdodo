@@ -63,6 +63,9 @@ class DatabaseSeeder extends Seeder
             Airport::firstOrCreate(['iata_code' => $airport['iata_code']], $airport);
         }
 
-        $this->call(FlightSeeder::class);
+        $this->call([
+            UserSeeder::class,
+            FlightSeeder::class,
+        ]);
     }
 }

@@ -3,34 +3,51 @@
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\FlightController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\UserAuthController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\FlightController as AdminFlightController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
 
 // --- Public user flow ---
 Route::get('/', [FlightController::class, 'index'])->name('home');
 Route::get('/search', [FlightController::class, 'search'])->name('flights.search');
 
-Route::get('/book', [OrderController::class, 'create'])->name('orders.create');
-Route::post('/book', [OrderController::class, 'store'])->name('orders.store');
+// --- Auth Flow ---
+Route::get('/login', [UserAuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [UserAuthController::class, 'login'])->name('login.submit');
+Route::post('/logout', [UserAuthController::class, 'logout'])->name('logout');
 
-Route::get('/orders/{reference}/payment', [OrderController::class, 'payment'])->name('orders.payment');
-Route::post('/orders/{reference}/payment', [OrderController::class, 'submitPayment'])->name('orders.payment.submit');
+// --- Protected user flow ---
+Route::middleware('auth')->group(function () {
+    Route::get('/book', [OrderController::class, 'create'])->name('orders.create');
+    Route::post('/book', [OrderController::class, 'store'])->name('orders.store');
 
-Route::get('/orders/{reference}/status', [OrderController::class, 'status'])->name('orders.status');
-Route::get('/orders/{reference}/download', [OrderController::class, 'download'])->name('orders.download');
+    Route::get('/orders/{reference}/status', [OrderController::class, 'status'])->name('orders.status');
+    Route::get('/orders/{reference}/download', [OrderController::class, 'download'])->name('orders.download');
 
-// --- My Bookings (lookup by email) ---
-Route::get('/my-bookings', [BookingController::class, 'lookup'])->name('bookings.lookup');
-Route::post('/my-bookings', [BookingController::class, 'search'])->name('bookings.search');
-Route::get('/my-bookings/{reference}', [BookingController::class, 'show'])->name('bookings.show');
-Route::get('/my-bookings/{reference}/edit', [BookingController::class, 'edit'])->name('bookings.edit');
-Route::put('/my-bookings/{reference}', [BookingController::class, 'update'])->name('bookings.update');
-Route::get('/my-bookings/{reference}/download', [BookingController::class, 'download'])->name('bookings.download');
+    // My Bookings
+    Route::get('/my-bookings', [BookingController::class, 'lookup'])->name('bookings.lookup');
+    Route::get('/my-bookings/{reference}', [BookingController::class, 'show'])->name('bookings.show');
+    Route::get('/my-bookings/{reference}/edit', [BookingController::class, 'edit'])->name('bookings.edit');
+    Route::put('/my-bookings/{reference}', [BookingController::class, 'update'])->name('bookings.update');
+    Route::get('/my-bookings/{reference}/download', [BookingController::class, 'download'])->name('bookings.download');
+});
+
+// Skip payment routes for now
+// Route::get('/orders/{reference}/payment', [OrderController::class, 'payment'])->name('orders.payment');
+// Route::post('/orders/{reference}/payment', [OrderController::class, 'submitPayment'])->name('orders.payment.submit');
 
 // --- Admin auth ---
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', function () {
+        if (auth()->check() && auth()->user()->is_admin) {
+            return redirect()->route('admin.orders.index');
+        }
+        return redirect()->route('admin.login');
+    });
+
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
@@ -50,5 +67,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/flights', [AdminFlightController::class, 'index'])->name('flights.index');
         Route::post('/flights/{flight}/toggle', [AdminFlightController::class, 'toggleActive'])->name('flights.toggle');
         Route::post('/flights/sync', [AdminFlightController::class, 'sync'])->name('flights.sync');
+
+        // Users
+        Route::resource('users', AdminUserController::class);
     });
 });

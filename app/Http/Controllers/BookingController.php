@@ -12,22 +12,14 @@ class BookingController extends Controller
 {
     public function lookup()
     {
-        return Inertia::render('MyBookings/Lookup');
-    }
-
-    public function search(Request $request)
-    {
-        $request->validate(['email' => 'required|email']);
-
         $orders = Order::with(['flight.airline', 'flight.origin', 'flight.destination', 'payment'])
             ->withCount('passengers')
-            ->where('contact_email', $request->email)
+            ->where('user_id', auth()->id())
             ->latest()
             ->get();
 
         return Inertia::render('MyBookings/List', [
             'orders' => $orders,
-            'email'  => $request->email,
         ]);
     }
 
@@ -46,11 +38,6 @@ class BookingController extends Controller
             ->where('reference', $reference)
             ->firstOrFail();
 
-        if (! in_array($order->status, ['pending', 'payment_submitted'])) {
-            return redirect()->route('bookings.show', $reference)
-                ->with('error', 'This booking can no longer be edited.');
-        }
-
         return Inertia::render('MyBookings/Edit', ['order' => $order]);
     }
 
@@ -59,11 +46,6 @@ class BookingController extends Controller
         $order = Order::with('passengers')
             ->where('reference', $reference)
             ->firstOrFail();
-
-        if (! in_array($order->status, ['pending', 'payment_submitted'])) {
-            return redirect()->route('bookings.show', $reference)
-                ->with('error', 'This booking can no longer be edited.');
-        }
 
         $request->validate([
             'contact_name'  => 'required|string|max:100',

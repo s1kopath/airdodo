@@ -12,16 +12,20 @@ class ItineraryPdfService
     {
         $pdf  = $this->buildPdf($order);
         $path = "itineraries/{$order->reference}.pdf";
+        $fullPath = storage_path("app/{$path}");
 
-        storage_path("app/{$path}");
-        $pdf->save(storage_path("app/{$path}"));
+        if (!file_exists(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0775, true);
+        }
+
+        $pdf->save($fullPath);
 
         return $path;
     }
 
     public function stream(Order $order): Response
     {
-        return $this->buildPdf($order)->stream("itinerary-{$order->reference}.pdf");
+        return $this->buildPdf($order)->download("itinerary-{$order->reference}.pdf");
     }
 
     private function buildPdf(Order $order): \Barryvdh\DomPDF\PDF

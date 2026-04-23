@@ -52,18 +52,25 @@ class OrderController extends Controller
         $order = Order::create([
             'reference'     => strtoupper(Str::random(8)),
             'flight_id'     => $request->flight_id,
+            'user_id'       => auth()->id(),
             'travel_date'   => $request->travel_date,
             'contact_name'  => $request->contact_name,
             'contact_email' => $request->contact_email,
             'contact_phone' => $request->contact_phone,
-            'status'        => 'pending',
+            'status'        => 'approved',
         ]);
 
         foreach ($request->passengers as $p) {
             Passenger::create(array_merge($p, ['order_id' => $order->id]));
         }
 
-        return redirect()->route('orders.payment', $order->reference);
+        // Auto-generate PDF
+        $pdfService = app(ItineraryPdfService::class);
+        $order->load(['flight.airline', 'flight.origin', 'flight.destination', 'passengers']);
+        $path = $pdfService->generate($order);
+        $order->update(['pdf_path' => $path]);
+
+        return redirect()->route('orders.status', $order->reference);
     }
 
     public function payment(string $reference)

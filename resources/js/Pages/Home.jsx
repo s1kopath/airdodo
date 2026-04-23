@@ -17,7 +17,7 @@ const TODAY = new Date().toISOString().split('T')[0];
 export default function Home({ airports }) {
     const [origin, setOrigin]           = useState('');
     const [destination, setDestination] = useState('');
-    const [date, setDate]               = useState('');
+    const [date, setDate]               = useState(TODAY);
     const [passengers, setPassengers]   = useState({ adults: 1, children: 0, infants: 0 });
     const [errors, setErrors]           = useState({});
     const [searching, setSearching]     = useState(false);
@@ -56,172 +56,201 @@ export default function Home({ airports }) {
 
     return (
         <Layout>
-            {/* Hero */}
-            <div className="relative overflow-hidden pb-28" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%)' }}>
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, #818cf8 0%, transparent 50%), radial-gradient(circle at 80% 20%, #6366f1 0%, transparent 50%)' }} />
-                <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-                    <span className="absolute text-white/5 text-9xl" style={{ top: '10%', left: '5%', transform: 'rotate(-20deg)' }}>✈</span>
-                    <span className="absolute text-white/5 text-7xl" style={{ bottom: '20%', right: '8%', transform: 'rotate(15deg)' }}>✈</span>
+            {/* Hero Section */}
+            <div className="relative overflow-hidden pt-20 pb-32 bg-navy">
+                {/* Decorative background elements */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-brand blur-[120px]" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] rounded-full bg-indigo-500 blur-[100px]" />
                 </div>
-                <div className="relative max-w-3xl mx-auto px-4 pt-14 pb-8 text-center">
-                    <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs font-medium px-3 py-1.5 rounded-full mb-5 backdrop-blur-sm border border-white/10">
-                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                        Embassy-compliant · No real booking required
+                
+                <div className="relative max-w-4xl mx-auto px-6 text-center">
+                    <div className="inline-flex items-center gap-2.5 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full mb-8 transform transition-all hover:bg-white/10">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-white/80 text-[11px] font-bold uppercase tracking-widest">Embassy Compliant Service</span>
                     </div>
-                    <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-3 leading-tight tracking-tight">
-                        Flight Itinerary<br />
-                        <span className="text-indigo-300">for Visa Application</span>
+                    
+                    <h1 className="text-4xl md:text-6xl font-black text-white mb-6 leading-[1.1] tracking-tight">
+                        Instant Flight Itinerary<br />
+                        <span className="text-brand">for Visa Applications</span>
                     </h1>
-                    <p className="text-white/50 text-sm sm:text-base max-w-md mx-auto">
-                        Search flights, fill passenger details, pay via bKash — get a PDF itinerary in minutes.
+                    <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-0">
+                        Generate professional, verifiable flight reservations for your visa application in minutes. Simple, fast, and globally accepted.
                     </p>
                 </div>
             </div>
 
-            {/* Search card — overlaps hero */}
-            <div className="max-w-3xl mx-auto -mt-24 relative z-10 px-4">
-                <form onSubmit={submit} className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-                    <div className="p-5 sm:p-6">
-                        {/* Route row */}
-                        <div className="flex items-start gap-2">
-                            <div className="flex-1">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 ml-1">From</label>
+            {/* Search Box Section */}
+            <div className="max-w-4xl mx-auto -mt-20 relative z-20 px-6">
+                <form onSubmit={submit} className="glass rounded-3xl overflow-hidden shadow-2xl p-1.5 border-white/40">
+                    <div className="bg-white rounded-[1.4rem] p-6 md:p-8">
+                        {/* Route selection */}
+                        <div className="flex flex-col md:flex-row items-stretch gap-4 relative">
+                            <div className="flex-1 md:mr-2">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Departure From</label>
                                 <AirportCombobox
                                     airports={airports}
                                     value={origin}
                                     onChange={setOrigin}
-                                    placeholder="City or airport"
+                                    placeholder="Select Origin"
                                     exclude={destination}
                                 />
-                                {errors.origin && <p className="text-red-500 text-xs mt-1 ml-1">{errors.origin}</p>}
+                                {errors.origin && <p className="text-red-500 text-[10px] font-bold mt-1.5 ml-1 uppercase">{errors.origin}</p>}
                             </div>
 
-                            {/* Swap */}
-                            <button
-                                type="button"
-                                onClick={swap}
-                                className="mt-7 flex-shrink-0 w-9 h-9 rounded-full border-2 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 flex items-center justify-center transition-all group"
-                                title="Swap origin and destination"
-                            >
-                                <svg className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                </svg>
-                            </button>
+                            {/* Swap button */}
+                            <div className="flex items-center justify-center -my-2 md:my-0 md:absolute md:left-1/2 md:top-[26px] md:-translate-x-1/2 z-20">
+                                <button
+                                    type="button"
+                                    onClick={swap}
+                                    className="w-10 h-10 rounded-full bg-white border-2 border-slate-100 text-slate-400 hover:text-brand hover:border-brand shadow-lg hover:shadow-brand/20 transition-all transform hover:rotate-180 active:scale-90 flex items-center justify-center"
+                                    title="Swap locations"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m7 16-4-4 4-4"/><path d="M3 12h18"/><path d="m17 8 4 4-4 4"/></svg>
+                                </button>
+                            </div>
 
-                            <div className="flex-1">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 ml-1">To</label>
+                            <div className="flex-1 md:ml-2">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Arrival At</label>
                                 <AirportCombobox
                                     airports={airports}
                                     value={destination}
                                     onChange={setDestination}
-                                    placeholder="City or airport"
+                                    placeholder="Select Destination"
                                     exclude={origin}
                                 />
-                                {errors.destination && <p className="text-red-500 text-xs mt-1 ml-1">{errors.destination}</p>}
+                                {errors.destination && <p className="text-red-500 text-[10px] font-bold mt-1.5 ml-1 uppercase">{errors.destination}</p>}
                             </div>
                         </div>
 
-                        {/* Date + Passengers row */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 ml-1">Travel Date</label>
-                                <div className={`flex items-center border-2 rounded-xl px-3 py-2.5 transition-all bg-white ${date ? 'border-gray-200' : 'border-gray-200'} focus-within:border-indigo-500 focus-within:shadow-sm hover:border-gray-300`}>
-                                    <span className="text-gray-400 text-lg mr-2">📅</span>
+                        {/* Date and Passengers */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <div className="md:mr-2">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Departure Date</label>
+                                <div className="group relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-brand transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+                                    </div>
                                     <input
                                         type="date"
                                         min={TODAY}
                                         value={date}
                                         onChange={e => setDate(e.target.value)}
-                                        className="flex-1 bg-transparent outline-none text-sm font-medium text-gray-800 min-w-0"
+                                        className="w-full bg-slate-50 border-2 border-transparent focus:border-brand focus:bg-white rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold text-slate-900 outline-none transition-all hover:bg-slate-100"
                                     />
                                 </div>
-                                {errors.date && <p className="text-red-500 text-xs mt-1 ml-1">{errors.date}</p>}
+                                {errors.date && <p className="text-red-500 text-[10px] font-bold mt-1.5 ml-1 uppercase">{errors.date}</p>}
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 ml-1">Passengers</label>
+                            <div className="md:ml-2">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Travelers</label>
                                 <PassengerPicker value={passengers} onChange={setPassengers} />
                             </div>
                         </div>
-                    </div>
 
-                    {/* Search button */}
-                    <div className="px-5 sm:px-6 pb-5 sm:pb-6">
-                        <button
-                            type="submit"
-                            disabled={searching}
-                            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 text-base shadow-lg shadow-indigo-200"
-                        >
-                            {searching ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                                    </svg>
-                                    Searching…
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                    Search Flights
-                                </>
-                            )}
-                        </button>
+                        {/* Submit button */}
+                        <div className="mt-10">
+                            <button
+                                type="submit"
+                                disabled={searching}
+                                className="w-full group bg-navy hover:bg-navy-light text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-navy/10 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-3 text-lg overflow-hidden relative"
+                            >
+                                {searching ? (
+                                    <>
+                                        <svg className="animate-spin w-5 h-5 text-brand" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                        </svg>
+                                        <span className="tracking-tight">Searching Flights...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="tracking-tight">Search Available Flights</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><path d="m9 18 6-6-6-6"/></svg>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Popular routes */}
+                        <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mr-2">Fast Search:</span>
+                            {POPULAR_ROUTES.map(r => (
+                                <button
+                                    key={r.label}
+                                    type="button"
+                                    onClick={() => quickRoute(r.from, r.to)}
+                                    className="text-[11px] font-bold text-slate-600 bg-slate-50 hover:bg-brand hover:text-white border border-slate-200 hover:border-brand rounded-xl px-4 py-1.5 transition-all"
+                                >
+                                    {r.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </form>
+            </div>
 
-                {/* Popular routes */}
-                <div className="mt-4 flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-gray-400 font-medium">Popular:</span>
-                    {POPULAR_ROUTES.map(r => (
-                        <button
-                            key={r.label}
-                            type="button"
-                            onClick={() => quickRoute(r.from, r.to)}
-                            className="text-xs bg-white hover:bg-indigo-50 hover:text-indigo-600 text-gray-600 border border-gray-200 hover:border-indigo-300 rounded-full px-3 py-1 transition-colors"
-                        >
-                            {r.label}
-                        </button>
+            {/* Values/Features Section */}
+            <div className="max-w-5xl mx-auto px-6 mt-24">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {[
+                        { 
+                            icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>, 
+                            title: 'Instant Issuance', 
+                            desc: 'Get your professional PDF itinerary immediately after manual verification of your payment.',
+                            color: 'bg-blue-50 text-blue-600'
+                        },
+                        { 
+                            icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>, 
+                            title: 'Embassy Approved', 
+                            desc: 'Our itineraries follow standard IATA formats, making them perfect for Schengen, UK, USA, and other visa types.',
+                            color: 'bg-emerald-50 text-emerald-600'
+                        },
+                        { 
+                            icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>, 
+                            title: 'Secure Payments', 
+                            desc: 'Pay safely using bKash. Every transaction is manually audited to ensure security and peace of mind.',
+                            color: 'bg-rose-50 text-rose-600'
+                        },
+                    ].map((f, i) => (
+                        <div key={i} className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
+                            <div className={`w-14 h-14 rounded-2xl ${f.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                                {f.icon}
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 mb-3">{f.title}</h3>
+                            <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+                        </div>
                     ))}
                 </div>
             </div>
 
-            {/* Feature cards */}
-            <div className="max-w-3xl mx-auto px-4 mt-10 grid grid-cols-3 gap-4">
-                {[
-                    { icon: '⚡', title: 'Instant PDF', desc: 'Download minutes after approval', color: 'bg-amber-50 text-amber-500' },
-                    { icon: '✅', title: 'Embassy Compliant', desc: 'Accepted by embassies worldwide', color: 'bg-emerald-50 text-emerald-500' },
-                    { icon: '📱', title: 'Pay via bKash', desc: 'Simple mobile payment, verified manually', color: 'bg-pink-50 text-pink-500' },
-                ].map(f => (
-                    <div key={f.title} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center hover:shadow-md hover:-translate-y-0.5 transition-all">
-                        <div className={`w-12 h-12 rounded-xl ${f.color} flex items-center justify-center text-2xl mx-auto mb-3`}>{f.icon}</div>
-                        <div className="font-bold text-sm text-gray-800">{f.title}</div>
-                        <div className="text-xs text-gray-500 mt-1 leading-relaxed">{f.desc}</div>
-                    </div>
-                ))}
-            </div>
-
-            {/* How it works */}
-            <div className="max-w-3xl mx-auto px-4 mt-12 mb-8">
-                <h2 className="text-center text-lg font-bold text-gray-800 mb-8">How it works</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {/* Process Section */}
+            <div className="max-w-4xl mx-auto px-6 mt-32 mb-20">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl font-black text-slate-900 mb-4">How it Works</h2>
+                    <p className="text-slate-500">Your professional itinerary in four simple steps</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-12">
                     {[
-                        { step: '1', icon: '🔍', title: 'Search', desc: 'Find your flight by route and date' },
-                        { step: '2', icon: '📝', title: 'Fill Details', desc: 'Enter passenger passport information' },
-                        { step: '3', icon: '📱', title: 'Pay', desc: 'Send payment via bKash and submit' },
-                        { step: '4', icon: '📄', title: 'Download', desc: 'Get your PDF itinerary once approved' },
-                    ].map(s => (
-                        <div key={s.step} className="bg-white rounded-2xl border border-gray-100 p-5 text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                            <div className="w-9 h-9 rounded-full bg-indigo-600 text-white text-sm font-extrabold flex items-center justify-center mx-auto mb-3 shadow-sm shadow-indigo-200">{s.step}</div>
-                            <div className="text-2xl mb-2">{s.icon}</div>
-                            <div className="text-sm font-bold text-gray-800">{s.title}</div>
-                            <div className="text-xs text-gray-500 mt-1 leading-relaxed">{s.desc}</div>
+                        { step: '01', title: 'Find Flight', desc: 'Search and select your preferred route' },
+                        { step: '02', title: 'Passport Info', desc: 'Provide passenger details for the itinerary' },
+                        { step: '03', title: 'Payment', desc: 'Transfer fee via bKash and submit reference' },
+                        { step: '04', title: 'Receive PDF', desc: 'Download your document once verified' },
+                    ].map((s, i) => (
+                        <div key={i} className="relative group">
+                            <div className="text-[60px] font-black text-slate-100 absolute -top-8 -left-2 z-0 group-hover:text-brand/10 transition-colors">{s.step}</div>
+                            <div className="relative z-10 pt-4">
+                                <h4 className="font-black text-slate-900 mb-2">{s.title}</h4>
+                                <p className="text-xs text-slate-500 leading-relaxed">{s.desc}</p>
+                            </div>
                         </div>
                     ))}
                 </div>
             </div>
         </Layout>
+
     );
 }

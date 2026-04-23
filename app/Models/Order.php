@@ -10,9 +10,14 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'reference', 'flight_id', 'travel_date', 'contact_name',
+        'reference', 'flight_id', 'user_id', 'travel_date', 'contact_name',
         'contact_email', 'contact_phone', 'status', 'pdf_path', 'admin_note',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     protected $casts = ['travel_date' => 'date'];
 
