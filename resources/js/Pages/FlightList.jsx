@@ -14,16 +14,32 @@ const AIRLINE_STYLING = {
     default: { color: 'text-navy', bg: 'bg-slate-50', border: 'border-slate-200' }
 };
 
-function AirlineBadge({ code, name }) {
+// Free airline-logo CDN keyed by IATA code (covers BD + international carriers).
+const airlineLogoUrl = code => (code ? `https://pics.avs.io/100/100/${code}.png` : null);
+
+function AirlineBadge({ code, name, logo }) {
     const s = AIRLINE_STYLING[code] ?? AIRLINE_STYLING.default;
+    const [imgOk, setImgOk] = useState(true);
+    const src = logo || airlineLogoUrl(code);
+
     return (
-        <div className={`flex items-center gap-3 ${s.bg} ${s.border} border p-2 rounded-2xl pr-4`} title={name}>
-            <div className={`w-10 h-10 rounded-xl bg-white border ${s.border} flex items-center justify-center font-black text-sm ${s.color} shadow-sm`}>
-                {code}
+        <div className="flex items-center gap-4" title={name}>
+            <div className={`w-16 h-16 md:w-17 md:h-17 rounded-2xl bg-white border ${s.border} flex items-center justify-center overflow-hidden shadow-sm shrink-0 p-2.5`}>
+                {src && imgOk ? (
+                    <img
+                        src={src}
+                        alt={`${name ?? code} logo`}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                        onError={() => setImgOk(false)}
+                    />
+                ) : (
+                    <span className={`font-black text-xl ${s.color}`}>{code}</span>
+                )}
             </div>
-            <div className="flex flex-col">
-                <span className={`text-[10px] font-black uppercase tracking-widest ${s.color} leading-none`}>{code} Flight</span>
-                <span className="text-slate-900 font-bold text-sm leading-tight">{name}</span>
+            <div className="flex flex-col min-w-0">
+                <span className="text-slate-900 font-extrabold text-base leading-tight">{name}</span>
+                <span className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">{code} · Non-stop</span>
             </div>
         </div>
     );
@@ -40,7 +56,7 @@ function FlightCard({ flight, onSelect }) {
             <div className="p-6 flex flex-col md:flex-row items-center gap-8">
                 {/* Airline Info */}
                 <div className="flex-shrink-0 w-full md:w-auto">
-                    <AirlineBadge code={flight.airline?.code} name={flight.airline?.name} />
+                    <AirlineBadge code={flight.airline?.code} name={flight.airline?.name} logo={flight.airline?.logo_url} />
                 </div>
 
                 {/* Times + Route Visual */}

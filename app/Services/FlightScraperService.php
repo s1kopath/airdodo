@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Airline;
 use App\Models\Airport;
 use App\Models\Flight;
+use App\Services\AirlineLogoService;
 use App\Services\Scrapers\AeroDataBoxScraper;
 use App\Services\Scrapers\ScrapedFlight;
 use App\Services\Scrapers\StaticFlightData;
@@ -28,6 +29,7 @@ class FlightScraperService
     public function __construct(
         private AeroDataBoxScraper $aerodatabox,
         private StaticFlightData $static,
+        private AirlineLogoService $logos,
     ) {}
 
     public function run(): array
@@ -51,6 +53,13 @@ class FlightScraperService
 
         // Level 2: static data fills anything still missing.
         $results['static'] = $this->persist($this->static->get(), 'static', onlyIfMissing: true);
+
+        // Cache logos locally for any newly-seen airlines (no-op once all are cached).
+        try {
+            $this->logos->fetchMissing();
+        } catch (\Throwable $e) {
+            Log::warning('Airline logo fetch failed: '.$e->getMessage());
+        }
 
         // Record that a sync completed, even when only static data loaded —
         // so "Last Synced" reflects the run, not just whether live data arrived.
