@@ -5,61 +5,56 @@ namespace App\Services;
 use App\Models\Airline;
 use App\Models\Airport;
 use App\Models\Flight;
-use App\Services\Scrapers\GuzzleScraper;
-use App\Services\Scrapers\OtaApiScraper;
-use App\Services\Scrapers\PantherScraper;
+use App\Services\Scrapers\AeroDataBoxScraper;
 use App\Services\Scrapers\ScrapedFlight;
 use App\Services\Scrapers\StaticFlightData;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Builds the flight catalogue from two cPanel-friendly layers:
+ *   1. Live  — AeroDataBox API (plain HTTP + JSON, no browser needed)
+ *   2. Static — curated fallback data that fills any routes the API didn't cover
+ *
+ * (The old Guzzle/Panther HTML scrapers and speculative OTA endpoints were
+ * removed: the airline sites are JS SPAs and the OTA hosts never resolved, so
+ * neither could ever work on shared hosting.)
+ */
 class FlightScraperService
 {
+    /** Cache key holding the timestamp of the last completed sync run. */
+    public const LAST_SYNCED_KEY = 'flights.last_synced_at';
+
     public function __construct(
-        private GuzzleScraper $guzzle,
-        private PantherScraper $panther,
+        private AeroDataBoxScraper $aerodatabox,
         private StaticFlightData $static,
-        private OtaApiScraper $ota,
     ) {}
 
     public function run(): array
     {
-        $results = ['scraped' => 0, 'ota' => 0, 'static' => 0, 'skipped' => 0];
+        $results = ['scraped' => 0, 'static' => 0, 'skipped' => 0];
 
-        // Level 1 & 2: airline website scrapers (Guzzle → Panther fallback)
-        foreach ($this->targets() as $target) {
-            $flights = [];
+        // Level 1: live data from AeroDataBox.
+        try {
+            $live = $this->aerodatabox->scrapeAll();
 
-            if ($target['guzzle_url'] ?? null) {
-                $flights = $this->guzzle->scrape($target['guzzle_url'], $target['parser']);
-            }
-
-            if (empty($flights) && ($target['panther_url'] ?? null)) {
-                Log::info("Falling back to Panther for {$target['name']}");
-                $flights = $this->panther->scrape($target['panther_url'], $target['parser']);
-            }
-
-            if (!empty($flights)) {
-                $saved = $this->persist($flights, 'scraped');
-                $results['scraped'] += $saved;
+            if (! empty($live)) {
+                $results['scraped'] = $this->persist($live, 'scraped');
             } else {
                 $results['skipped']++;
-                Log::warning("All scrapers failed for {$target['name']}, will use static data.");
+                Log::warning('AeroDataBox returned no flights; relying on static data.');
             }
+        } catch (\Throwable $e) {
+            $results['skipped']++;
+            Log::error('AeroDataBox sync failed: '.$e->getMessage());
         }
 
-        // Level 3: OTA API scrapers (ShareTrip, GoZayaan, TripSatisfy)
-        foreach ($this->ota->scrapeAll() as ['source' => $source, 'flights' => $flights]) {
-            if (!empty($flights)) {
-                $saved = $this->persist($flights, $source, onlyIfMissing: true);
-                $results['ota'] += $saved;
-                Log::info("OTA [{$source}]: persisted {$saved} flights.");
-            }
-        }
+        // Level 2: static data fills anything still missing.
+        $results['static'] = $this->persist($this->static->get(), 'static', onlyIfMissing: true);
 
-        // Level 4: Static data fills anything still missing
-        $staticFlights = $this->static->get();
-        $saved = $this->persist($staticFlights, 'static', onlyIfMissing: true);
-        $results['static'] += $saved;
+        // Record that a sync completed, even when only static data loaded —
+        // so "Last Synced" reflects the run, not just whether live data arrived.
+        Cache::forever(self::LAST_SYNCED_KEY, now()->toIso8601String());
 
         return $results;
     }
@@ -104,7 +99,7 @@ class FlightScraperService
                     'operates_on'      => $f->operatesOn,
                     'cabin_class'      => $f->cabinClass,
                     'source'           => $source,
-                    'scraped_at'       => in_array($source, ['scraped', 'sharetrip', 'gozayaan', 'tripsatisfy']) ? now() : null,
+                    'scraped_at'       => $source === 'scraped' ? now() : null,
                     'is_active'        => true,
                 ]
             );
@@ -113,30 +108,6 @@ class FlightScraperService
         }
 
         return $saved;
-    }
-
-    private function targets(): array
-    {
-        return [
-            [
-                'name'        => 'Biman Bangladesh',
-                'guzzle_url'  => 'https://www.bimanair.com/flight-schedule',
-                'panther_url' => 'https://www.bimanair.com/flight-schedule',
-                'parser'      => fn ($crawler) => $this->parseBiman($crawler),
-            ],
-            [
-                'name'        => 'US-Bangla Airlines',
-                'guzzle_url'  => 'https://www.usbair.com/flight-schedule',
-                'panther_url' => 'https://www.usbair.com/flight-schedule',
-                'parser'      => fn ($crawler) => $this->parseUSBangla($crawler),
-            ],
-            [
-                'name'        => 'Novoair',
-                'guzzle_url'  => 'https://www.flynovoair.com/flight-schedule',
-                'panther_url' => 'https://www.flynovoair.com/flight-schedule',
-                'parser'      => fn ($crawler) => $this->parseNovoair($crawler),
-            ],
-        ];
     }
 
     // -------------------------------------------------------------------------
@@ -168,111 +139,5 @@ class FlightScraperService
             'UL' => 'SriLankan Airlines',
             'CZ' => 'China Southern',
         ][$code] ?? $code;
-    }
-
-    // -------------------------------------------------------------------------
-    // Per-airline HTML parsers
-    // -------------------------------------------------------------------------
-
-    private function parseBiman($crawler): array
-    {
-        $flights = [];
-
-        try {
-            $crawler->filter('.flight-schedule-row, tr.schedule-item')->each(function ($row) use (&$flights) {
-                $cols = $row->filter('td');
-                if ($cols->count() < 6) return;
-
-                $flightNo = trim($cols->eq(0)->text());
-                $origin   = trim($cols->eq(1)->text());
-                $dest     = trim($cols->eq(2)->text());
-                $dep      = trim($cols->eq(3)->text());
-                $arr      = trim($cols->eq(4)->text());
-                $days     = $this->parseDayString(trim($cols->eq(5)->text()));
-
-                [$dh, $dm] = $this->calcDuration($dep, $arr);
-                $flights[] = new ScrapedFlight('BG', $flightNo, $origin, $dest, $dep, $arr, $dh, $dm, $days, source: 'scraped');
-            });
-        } catch (\Exception $e) {
-            Log::debug('Biman parser error: ' . $e->getMessage());
-        }
-
-        return $flights;
-    }
-
-    private function parseUSBangla($crawler): array
-    {
-        $flights = [];
-
-        try {
-            $crawler->filter('.schedule-table tbody tr, table.flight-table tr')->each(function ($row) use (&$flights) {
-                $cols = $row->filter('td');
-                if ($cols->count() < 5) return;
-
-                $flightNo = trim($cols->eq(0)->text());
-                $origin   = trim($cols->eq(1)->text());
-                $dest     = trim($cols->eq(2)->text());
-                $dep      = trim($cols->eq(3)->text());
-                $arr      = trim($cols->eq(4)->text());
-                $days     = $cols->count() > 5 ? $this->parseDayString(trim($cols->eq(5)->text())) : [0,1,2,3,4,5,6];
-
-                [$dh, $dm] = $this->calcDuration($dep, $arr);
-                $flights[] = new ScrapedFlight('BS', $flightNo, $origin, $dest, $dep, $arr, $dh, $dm, $days, source: 'scraped');
-            });
-        } catch (\Exception $e) {
-            Log::debug('US-Bangla parser error: ' . $e->getMessage());
-        }
-
-        return $flights;
-    }
-
-    private function parseNovoair($crawler): array
-    {
-        $flights = [];
-
-        try {
-            $crawler->filter('.novoair-schedule tr, .schedule-row')->each(function ($row) use (&$flights) {
-                $cols = $row->filter('td');
-                if ($cols->count() < 5) return;
-
-                $flightNo = trim($cols->eq(0)->text());
-                $origin   = trim($cols->eq(1)->text());
-                $dest     = trim($cols->eq(2)->text());
-                $dep      = trim($cols->eq(3)->text());
-                $arr      = trim($cols->eq(4)->text());
-
-                [$dh, $dm] = $this->calcDuration($dep, $arr);
-                $flights[] = new ScrapedFlight('VQ', $flightNo, $origin, $dest, $dep, $arr, $dh, $dm, [0,1,2,3,4,5,6], source: 'scraped');
-            });
-        } catch (\Exception $e) {
-            Log::debug('Novoair parser error: ' . $e->getMessage());
-        }
-
-        return $flights;
-    }
-
-    private function parseDayString(string $str): array
-    {
-        $map  = ['Su' => 0, 'Mo' => 1, 'Tu' => 2, 'We' => 3, 'Th' => 4, 'Fr' => 5, 'Sa' => 6];
-        $days = [];
-        foreach ($map as $abbr => $num) {
-            if (stripos($str, $abbr) !== false) {
-                $days[] = $num;
-            }
-        }
-        return $days ?: [0,1,2,3,4,5,6];
-    }
-
-    private function calcDuration(string $dep, string $arr): array
-    {
-        try {
-            $d = \Carbon\Carbon::createFromFormat('H:i', $dep);
-            $a = \Carbon\Carbon::createFromFormat('H:i', $arr);
-            if ($a->lt($d)) $a->addDay();
-            $mins = $d->diffInMinutes($a);
-            return [intdiv($mins, 60), $mins % 60];
-        } catch (\Exception) {
-            return [0, 0];
-        }
     }
 }

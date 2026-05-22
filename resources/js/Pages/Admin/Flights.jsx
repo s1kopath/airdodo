@@ -5,11 +5,8 @@ const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const SOURCE_META = {
-    static:      { label: 'Static',      color: 'bg-gray-100 text-gray-600' },
-    scraped:     { label: 'Live Scrape', color: 'bg-blue-100 text-blue-700' },
-    sharetrip:   { label: 'ShareTrip',   color: 'bg-violet-100 text-violet-700' },
-    gozayaan:    { label: 'GoZayaan',    color: 'bg-emerald-100 text-emerald-700' },
-    tripsatisfy: { label: 'TripSatisfy', color: 'bg-pink-100 text-pink-700' },
+    static:  { label: 'Static',             color: 'bg-gray-100 text-gray-600' },
+    scraped: { label: 'Live (AeroDataBox)', color: 'bg-blue-100 text-blue-700' },
 };
 
 const AIRLINE_COLORS = {
@@ -68,7 +65,7 @@ function SourceBadge({ source }) {
     );
 }
 
-export default function AdminFlights({ flights, stats, airlines, filters, flash }) {
+export default function AdminFlights({ flights, stats, airlines, filters, flash, sync: syncInfo }) {
     const { data, setData, get } = useForm({
         search:  filters?.search  ?? '',
         source:  filters?.source  ?? '',
@@ -85,8 +82,14 @@ export default function AdminFlights({ flights, stats, airlines, filters, flash 
         router.get('/admin/flights', { ...data, [field]: value }, { preserveState: true, replace: true });
     }
 
+    const canSync = syncInfo?.can_sync ?? true;
+
     function sync() {
-        if (!confirm('Run flight data sync? This may take 30–60 seconds.')) return;
+        if (!canSync) {
+            alert(`Daily sync limit reached (${syncInfo?.used}/${syncInfo?.limit}). Please try again tomorrow.`);
+            return;
+        }
+        if (!confirm('Run flight data sync? This may take up to a minute.')) return;
         router.post('/admin/flights/sync');
     }
 
@@ -108,12 +111,11 @@ export default function AdminFlights({ flights, stats, airlines, filters, flash 
             )}
 
             {/* Stats cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
                 <StatCard label="Total Flights"  value={stats?.total}   color="indigo" />
                 <StatCard label="Active"          value={stats?.active}  color="emerald" />
                 <StatCard label="Static Data"     value={stats?.static}  color="gray" />
-                <StatCard label="Live Scraped"    value={stats?.scraped} color="blue" />
-                <StatCard label="OTA Sources"     value={stats?.ota}     color="violet" />
+                <StatCard label="Live (AeroDataBox)" value={stats?.scraped} color="blue" />
                 <StatCard label="Last Synced"     value={lastSynced}     color="gray" sub="UTC+6" />
             </div>
 
@@ -153,12 +155,25 @@ export default function AdminFlights({ flights, stats, airlines, filters, flash 
                     ))}
                 </select>
 
-                <button
-                    onClick={sync}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-5 py-2 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap"
-                >
-                    <span className="text-base leading-none">⟳</span> Sync Now
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                    <button
+                        onClick={sync}
+                        disabled={!canSync}
+                        title={canSync ? 'Run flight data sync' : 'Daily sync limit reached'}
+                        className={`text-white text-sm px-5 py-2 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap ${
+                            canSync ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-300 cursor-not-allowed'
+                        }`}
+                    >
+                        <span className="text-base leading-none">⟳</span> Sync Now
+                    </button>
+                    {syncInfo && (
+                        <span className={`text-xs ${canSync ? 'text-gray-400' : 'text-red-500 font-medium'}`}>
+                            {canSync
+                                ? `${syncInfo.remaining} of ${syncInfo.limit} syncs left today`
+                                : `Daily limit reached (${syncInfo.used}/${syncInfo.limit})`}
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Table */}

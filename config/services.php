@@ -39,4 +39,11 @@ return [
         'vision_key' => env('GOOGLE_VISION_KEY'),
     ],
 
+    'aerodatabox' => [
+        // RapidAPI key from https://rapidapi.com/aedbx-aedbx/api/aerodatabox
+        'key'      => env('AERODATABOX_API_KEY'),
+        'host'     => env('AERODATABOX_API_HOST', 'aerodatabox.p.rapidapi.com'),
+        'base_url' => env('AERODATABOX_BASE_URL', 'https://aerodatabox.p.rapidapi.com'),
+    ],
+
 ];

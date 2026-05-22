@@ -8,19 +8,19 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 #[Signature('flights:scrape')]
-#[Description('Scrape flight schedules from airline sites (Guzzle → Panther → Static fallback)')]
+#[Description('Sync flight schedules from AeroDataBox (live) with static-data fallback')]
 class ScrapeFlights extends Command
 {
     public function handle(FlightScraperService $scraper): int
     {
-        $this->info('Starting flight scraper with 3-level fallback chain...');
+        $this->info('Syncing flights: AeroDataBox (live) → static fallback...');
 
         $results = $scraper->run();
 
         $this->table(['Source', 'Count'], [
-            ['scraped (live)',  $results['scraped']],
+            ['live (AeroDataBox)', $results['scraped']],
             ['static fallback', $results['static']],
-            ['sources failed',  $results['skipped']],
+            ['layers failed',   $results['skipped']],
         ]);
 
         $this->info('Done.');
